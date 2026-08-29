@@ -1,24 +1,24 @@
-# Continuous improvement procedure
+# 継続改善の手順
 
-Apply this only after a real task demonstrates a reusable improvement.
+実案件によって再利用可能な改善点が確認された後に限り、この手順を適用する。
 
-## Classify the finding
+## 改善点を分類する
 
-- Repeated, deterministic transformation or detection: change code and add a regression test.
-- Context-dependent judgment or review obligation: update the Skill or checklist.
-- One meeting's label, vocabulary, time offset, or correction: keep it in that meeting's session JSON.
-- Unsupported speculation or a one-off preference: do not turn it into a global rule.
+- 繰り返し発生し、機械的に再現できる変換または検出：コードを変更し、回帰テストを追加する。
+- 文脈に依存する判断または必須の確認項目：Skillまたはチェックリストを更新する。
+- 1つの会議だけに当てはまるラベル、用語、時刻補正、修正：その会議のセッションJSONに保持する。
+- 根拠のない推測または一度限りの好み：グローバルな規則にしない。
 
-## Regression-first update
+## 回帰テストを先に追加して更新する
 
-1. Reduce the failure to the smallest synthetic or irreversibly anonymized fixture.
-2. Add a test that fails for the demonstrated reason.
-3. Make the narrowest code or documentation change.
-4. Run the full unit suite, compile check, Skill validator, and an end-to-end CLI example.
-5. Update `CHANGELOG.md` when behavior or the public configuration contract changes.
+1. 問題を、最小の合成テスト用データ、または元に戻せない形で匿名化したテスト用データへ縮小する。
+2. 確認された原因によって失敗するテストを追加する。
+3. 必要最小限のコードまたはドキュメントだけを変更する。
+4. ユニットテスト一式、コンパイル確認、Skillバリデーター、CLIのエンドツーエンド例を実行する。
+5. 動作または公開設定の仕様が変わる場合は、`CHANGELOG.md` を更新する。
 
-Do not copy a customer sentence merely with names removed if its substance is confidential. Prefer a freshly written synthetic equivalent.
+内容自体が機密である顧客の発話は、氏名を取り除いただけの状態で複製してはならない。新たに作成した同等の合成データを優先する。
 
-## Release and synchronization
+## リリースと同期
 
-Keep the GitHub repository as the canonical source. The installed Codex Skill should remain a symlink to the checkout, so local Skill behavior follows reviewed repository changes. Do not replace an existing unrelated skill path. Commit or push only when the current task authorizes the external Git operation, and never include case configs, source transcripts, draft outputs, or review JSONL.
+GitHubリポジトリを正本として維持する。インストール済みのCodex Skillはチェックアウトへのシンボリックリンクのままにし、レビュー済みのリポジトリ変更がローカルのSkill動作に反映されるようにする。既存の無関係なSkillパスを置き換えてはならない。現在の依頼で外部Git操作が許可されている場合に限り `commit` または `push` し、案件固有の設定、入力発話録、下書き出力、レビューJSONLは決して含めない。

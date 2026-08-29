@@ -1,39 +1,39 @@
-# Review and completion checklist
+# レビューと完了確認のチェックリスト
 
-## Source and coverage
+## 入力ソースと収録範囲
 
-- Confirm each input belongs to the same meeting and is read in the correct encoding.
-- Compare segment counts, first timestamp, last timestamp, and gaps.
-- Confirm why each source is trusted for chunks, wording, timing, or speakers.
-- Do not claim audio verification unless the audio was actually checked.
+- 各入力が同じ会議のものであり、正しい文字コードで読み込まれていることを確認する。
+- セグメント数、最初のタイムスタンプ、最後のタイムスタンプ、欠落区間を比較する。
+- 各ソースを、チャンク、表記、時刻、話者のどの根拠として信頼するのか、その理由を確認する。
+- 実際に音声を確認していない限り、音声確認済みと説明しない。
 
-## Speaker boundaries
+## 話者境界
 
-- Review every `needs_review` record and every source gap.
-- Inspect questions followed by answers, short acknowledgements, interruptions, sentence-final boundary words, and closing greetings.
-- Confirm observer or third-party speech is not folded into a moderator or interviewee chunk.
-- Use row indexes, not displayed timestamps alone, for repeated times.
-- Sample supposedly high-confidence rows at the beginning, middle, and end.
+- `needs_review` の全レコードと、すべてのソース欠落区間を確認する。
+- 質問から回答へ移る箇所、短い相づち、割り込み、文末付近の話者境界にある語句、終了時の挨拶を確認する。
+- 傍聴者や第三者の発話が、モデレーターまたはインタビュー対象者のチャンクに取り込まれていないことを確認する。
+- 同じ時刻が繰り返される場合は、表示上のタイムスタンプだけでなく行番号を使用する。
+- 冒頭、中盤、末尾から、信頼度が高いと判定された行も抜き取り確認する。
 
-## Wording
+## 表記と発話内容
 
-- Compare all sources before correcting a doubtful phrase.
-- Verify proper nouns and current service names from authoritative sources when necessary.
-- Keep meeting-specific terminology out of global replacements.
-- Do not smooth away a meaningful hesitation, negation, number, qualification, or disagreement.
-- Do not add a plausible sentence unsupported by any source.
+- 疑わしい語句を修正する前に、すべてのソースを比較する。
+- 必要に応じて、固有名詞や現在のサービス名を信頼できる情報源で確認する。
+- 会議固有の用語をグローバルな `replacements` に含めない。
+- 意味のある言いよどみ、否定、数値、限定条件、意見の相違を、読みやすさのために消さない。
+- どのソースにも裏づけられていない、もっともらしい文を追加しない。
 
-## Output contract
+## 出力条件
 
-- Every paragraph after a blank line begins with an allowed speaker label when requested.
-- Required interviewee and team labels are exact.
-- Required anonymity is complete; forbidden original names and source IDs are absent.
-- Headings and metadata are present or absent exactly as requested.
-- No `SPEAKER_*`, classifier flags, VTT tags, cue IDs, or timestamps leak into body-only output.
+- 指定がある場合、空行後のすべての段落が、許可された話者ラベルで始まっている。
+- 指定されたインタビュー対象者とチームメンバーのラベルが、表記まで完全に一致している。
+- 指定された匿名化が完了し、使用を禁じられた元の氏名やソース内のIDが残っていない。
+- 見出しとメタデータが、指定どおりに存在するか、または存在しない。
+- 本文だけの出力に、`SPEAKER_*`、分類フラグ、VTTタグ、キューID、タイムスタンプが混入していない。
 
-## Mechanical audit
+## 機械的な監査
 
-- Run `transcript-reconcile audit` and resolve every error.
-- Check adjacent duplicates and accidental omissions around overridden rows.
-- Check Japanese quotation marks and any configured delimiter pairs.
-- Record output paragraph count, speaker counts, and any unverified ranges.
+- `transcript-reconcile audit` を実行し、すべてのエラーを解消する。
+- 隣接する重複と、`overrides` を適用した行の前後における意図しない欠落を確認する。
+- 日本語のかぎ括弧と、設定したその他の区切り記号の対応を確認する。
+- 出力の段落数、話者ごとの段落数、未検証の範囲を記録する。

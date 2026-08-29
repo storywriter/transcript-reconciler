@@ -1,37 +1,37 @@
-# Transcript reconciliation workflow
+# 発話録統合作業の手順
 
-## 1. Establish the contract
+## 1. 出力条件を確定する
 
-Record these facts before transforming text:
+テキストを変換する前に、次の事項を記録する。
 
-- Which source is easiest to read and should define ordinary chunk size?
-- Which source has trustworthy microphone- or participant-based speaker separation?
-- Which source has the strongest contextual wording?
-- What are the required output labels, anonymity rules, headings, metadata, and blank-line behavior?
-- Does every source cover the same time range?
-- Is audio verification in scope, or are only transcript files being reconciled?
+- どのソースが最も読みやすく、通常のチャンク粒度の基準に適しているか。
+- どのソースが、マイクまたは参加者に基づく信頼できる話者分離を持つか。
+- どのソースが、文脈を踏まえた表記に最も優れているか。
+- 必須の話者ラベル、匿名化規則、見出し、メタデータ、空行の扱いは何か。
+- すべてのソースが同じ時間範囲を収録しているか。
+- 音声確認まで依頼の範囲に含まれるか、それとも発話録ファイルだけを突き合わせるのか。
 
-Do not infer these answers from a previous interview.
+過去のインタビューの条件から、これらの答えを推測してはならない。
 
-## 2. Configure sources
+## 2. 入力ソースを設定する
 
-Use one timestamped source as `skeleton_source` and one timestamped, fine-grained source as `boundary_source`. Additional timed or untimed sources may be supplied as contextual evidence. The first version of the CLI requires every skeleton segment to have a start timestamp.
+タイムスタンプ付きソースの1つを `skeleton_source`、タイムスタンプ付きの細粒度ソースの1つを `boundary_source` とする。追加のタイムスタンプ付きソースやタイムスタンプなしソースは、文脈上の根拠として指定できる。現行CLIでは、骨格となるすべてのセグメントに開始タイムスタンプが必要である。
 
-Map raw speaker IDs only to names allowed by the current output contract. Configure fallback identity separately; CSV speaker IDs, `TRUE/FALSE`, and similar classifier fields are never boundary evidence.
+入力元の話者IDは、現在の出力条件で許可された名前だけに対応付ける。フォールバック時の話者は別に設定する。CSVの話者ID、`TRUE/FALSE`、同様の分類フィールドは、話者境界の根拠として使用しない。
 
-## 3. Inspect before aligning
+## 3. 対応付けの前に入力を確認する
 
-Run:
+次を実行する。
 
 ```bash
 transcript-reconcile inspect --config /path/to/session.json
 ```
 
-Check counts, first and last timestamps, unexpected speakers, empty sources, and partial coverage. A clean-looking source can still have incorrect speaker boundaries.
+件数、最初と最後のタイムスタンプ、想定外の話者、空のソース、収録範囲の部分的な欠落を確認する。見た目が整ったソースでも、話者境界が誤っていることはある。
 
-## 4. Generate a provisional draft and review report
+## 4. 暫定稿とレビューレポートを生成する
 
-Run:
+次を実行する。
 
 ```bash
 transcript-reconcile reconcile \
@@ -40,23 +40,23 @@ transcript-reconcile reconcile \
   --review /path/to/review.jsonl
 ```
 
-The tool treats each skeleton row as starting at its timestamp and ending at the next skeleton row's timestamp. It scores overlapping boundary cues using shared normalized text and time overlap. It does not automatically split a row with multiple speakers. A second speaker with only weak overlap is retained as diagnostic evidence but does not by itself force a review candidate; this prevents filler absent from the readable source from overwhelming the review queue.
+ツールは、骨格となる各行の区間を、その行のタイムスタンプから次の行のタイムスタンプまでとして扱う。重複する境界キューを、正規化後に共通するテキストと時間の重なりに基づいて採点する。複数の話者を含む行を自動では分割しない。重なりが弱い第2の話者は診断用の根拠として保持するが、それだけでレビュー対象にはしない。これにより、読みやすいソースには存在しないフィラーでレビュー対象が埋め尽くされるのを防ぐ。
 
-Prioritize records marked `needs_review`, but also sample high-confidence records. For each candidate, compare the skeleton text, ordered boundary cues, speaker scores, and additional source matches. Very short acknowledgements may have weak shared-text evidence even when their speaker timing is decisive.
+`needs_review` が付いたレコードを優先するが、信頼度が高いと判定されたレコードも抜き取り確認する。各候補について、骨格のテキスト、時系列順の境界キュー、話者スコア、追加ソースとの一致を比較する。非常に短い相づちは、発話時刻から話者を明確に判断できる場合でも、共通テキストによる根拠が弱いことがある。
 
-## 5. Record decisions reproducibly
+## 5. 判断結果を再現可能な形で記録する
 
-Add a segment-indexed override for every confirmed split or meeting-specific wording correction. The index is stable even when displayed timestamps repeat. Use a replacement only when the same correction is safe in all occurrences.
+確定した分割や会議固有の表記修正は、すべてセグメント番号を指定した `overrides`（個別上書き）として追加する。表示上のタイムスタンプが重複しても、セグメント番号は変わらない。同じ修正をすべての出現箇所に適用しても安全な場合に限り、`replacements`（一括置換）を使用する。
 
-Rerun the command after editing the config. Do not make an important final correction only in the generated Markdown; it would be lost on regeneration.
+設定を編集したら、コマンドを再実行する。重要な最終修正を生成済みMarkdownだけに加えてはならない。再生成時に失われるためである。
 
-## 6. Contextual wording review
+## 6. 文脈に基づいて表記を精査する
 
-Compare both or all supplied sources. Prefer a source-supported form that fits the surrounding conversation. For uncertain proper nouns, services, product names, or domain terms, search authoritative sources when current instructions permit it. Keep a note of unresolved uncertainty instead of fabricating certainty.
+提供された2つ、またはすべてのソースを比較する。ソースに裏づけられ、前後の会話にも合う表記を優先する。固有名詞、サービス名、製品名、専門用語に不確かな点がある場合は、現在の指示で許される範囲で信頼できる情報源を検索する。確実でない内容を作り上げるのではなく、未解決の不確実性を記録する。
 
-## 7. Audit and deliver
+## 7. 監査して納品する
 
-Run:
+次を実行する。
 
 ```bash
 transcript-reconcile audit \
@@ -64,4 +64,4 @@ transcript-reconcile audit \
   --input /path/to/final.md
 ```
 
-Complete the linked review checklist. Report uncovered time ranges, unresolved wording, and whether audio was checked.
+リンク先のレビューチェックリストをすべて完了する。収録されていない時間範囲、未解決の表記、音声を確認したかどうかを報告する。

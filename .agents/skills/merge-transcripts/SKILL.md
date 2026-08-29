@@ -1,31 +1,31 @@
 ---
 name: merge-transcripts
-description: Reconcile two or more AI transcripts of the same meeting, including VTT, SRT, CSV, Markdown, or text exports, when accurate speaker boundaries and a reviewed final transcript are required. Do not use for single-source proofreading or for transcribing audio from scratch.
+description: "同一会議についてAIが生成した2つ以上の発話録（VTT、SRT、CSV、Markdown、テキストなど）を突き合わせ、正確な話者境界と精査済みの最終発話録が必要なときに使用する。単一ソースの校正や、音声から新たに書き起こす依頼には使用しない。"
 ---
 
-# Merge Transcripts
+# 発話録を統合する
 
-Use the repository's deterministic CLI to organize evidence and audits, then apply contextual judgment to ambiguous boundaries and wording. The CLI's draft is never the final authority.
+リポジトリの再現可能なCLI処理で根拠を整理し、監査を実行してから、曖昧な話者境界や表記を文脈に基づいて判断する。CLIが生成する下書きを最終的な正解とはみなさない。
 
-## Required workflow
+## 必須の作業手順
 
-1. Read [references/workflow.md](references/workflow.md) before starting a merge.
-2. Extract the user's output contract separately for each meeting: source roles, speaker labels, anonymity, headings or metadata, paragraph behavior, terminology, and whether audio verification is requested.
-3. Keep customer inputs and meeting-specific configuration outside this repository. Resolve this `SKILL.md` to its real path; its fourth parent (`parents[3]`) is the tool repository. Use `scripts/transcript-reconcile` from that root.
-4. Create or adapt a session JSON. Read [references/configuration.md](references/configuration.md) when selecting columns, source authorities, fallbacks, replacements, or overrides.
-5. Run `inspect`, then `reconcile`. Review every JSONL record with `"needs_review": true`, plus the beginning, end, coverage gaps, short acknowledgements, and any region where source wording conflicts.
-6. Store confirmed speaker or wording decisions as segment-indexed `overrides`. Use global `replacements` only when every occurrence is demonstrably safe. Rerun until the draft is reproducible.
-7. Read [references/review-checklist.md](references/review-checklist.md), complete its contextual and mechanical checks, and run `audit` before delivery.
+1. 統合作業を始める前に、[references/workflow.md](references/workflow.md)を読む。
+2. 各会議について、ユーザーの出力条件を個別に抽出する。確認対象は、各ソースの役割、話者ラベル、匿名化、見出しやメタデータ、段落の扱い、用語、音声確認の要否である。
+3. 顧客から受け取った入力ファイルと会議固有の設定は、このリポジトリの外に置く。この `SKILL.md` の実体パスを解決し、その4番目の親（`parents[3]`）をツールのリポジトリとする。そのルートにある `scripts/transcript-reconcile` を使用する。
+4. セッションJSONを新規作成するか、既存のものを調整する。列、各ソースを何の根拠とするか、フォールバック、`replacements`、`overrides` を決めるときは、[references/configuration.md](references/configuration.md)を読む。
+5. `inspect`、続いて `reconcile` を実行する。`"needs_review": true` のJSONLレコードをすべて確認するほか、冒頭、末尾、収録範囲の欠落、短い相づち、ソース間で表記が食い違う箇所も確認する。
+6. 確定した話者や表記の判断は、セグメント番号を指定した `overrides` として保存する。グローバルな `replacements` は、すべての出現箇所を置換しても安全だと立証できる場合に限って使用する。下書きを再現できる状態になるまで再実行する。
+7. [references/review-checklist.md](references/review-checklist.md)を読み、文脈確認と機械的確認をすべて完了し、納品前に `audit` を実行する。
 
-## Non-negotiable boundaries
+## 必ず守る制約
 
-- Treat a readable source as a chunk skeleton only when the current meeting supports that role. Treat a fine-grained source as speaker authority only after checking its actual coverage and speaker provenance.
-- Do not invent a plausible utterance, silently merge conflicting source text, or assign an identity unsupported by the sources.
-- Split questions, answers, short acknowledgements, boundary words, and closing greetings when speaker evidence requires it.
-- Preserve meeting-specific vocabulary and labels in the session config; never import another meeting's dictionary blindly.
-- If audio was not checked, describe the result as reconciliation of the supplied transcripts and context, not audio-perfect verification.
-- If a source has a gap, identify the affected range and distinguish conservative fallback from verified evidence.
+- 読みやすいソースをチャンクの骨格として扱うのは、その会議において実際にその役割を担える場合に限る。細粒度のソースを話者判定の正とするのは、実際の収録範囲と話者情報の由来を確認した後に限る。
+- もっともらしい発話を創作しない。内容が食い違うソースを根拠なく統合しない。ソースに裏づけられていない人物を話者として割り当てない。
+- 話者の根拠が示す場合は、質問、回答、短い相づち、話者境界にある語句、終了時の挨拶を別のチャンクに分ける。
+- 会議固有の用語とラベルはセッション設定に保持し、別の会議の辞書を無検証で流用しない。
+- 音声を確認していない場合は、提供された発話録と文脈を突き合わせた結果として説明し、音声まで確認した完全な書き起こしとは説明しない。
+- ソースに欠落がある場合は、その範囲を特定し、保守的なフォールバックと検証済みの根拠を区別する。
 
-## Improving the workflow
+## 作業手順を継続改善する
 
-When a completed meeting reveals a genuinely reusable failure mode, read [references/maintenance.md](references/maintenance.md). Add a synthetic regression fixture and make the narrowest code or documentation change. Keep one-off vocabulary and judgment in the meeting config. Do not commit or push customer data, and do not perform external Git operations unless currently authorized.
+実案件の完了後に、真に再利用できる失敗パターンが判明した場合は、[references/maintenance.md](references/maintenance.md)を読む。合成した回帰テスト用データを追加し、必要最小限のコードまたはドキュメントだけを変更する。その会議だけに当てはまる用語や判断は、会議固有の設定に残す。顧客データをcommitまたはpushしてはならない。また、現在の依頼で許可されていない外部Git操作を行ってはならない。
