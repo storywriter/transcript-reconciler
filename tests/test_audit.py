@@ -29,6 +29,17 @@ class AuditTests(unittest.TestCase):
         self.assertIn("adjacent_duplicate", codes)
         self.assertIn("unbalanced_quotes", codes)
 
+    def test_allows_same_text_from_adjacent_different_speakers(self) -> None:
+        text = (
+            "**山本:** ありがとうございます。\n\n"
+            "**ユーザー:** ありがとうございます。\n"
+        )
+        report = audit_text(text, self.output)
+        codes = {error["code"] for error in report["errors"]}
+
+        self.assertTrue(report["ok"])
+        self.assertNotIn("adjacent_duplicate", codes)
+
 
 if __name__ == "__main__":
     unittest.main()

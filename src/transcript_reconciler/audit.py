@@ -15,7 +15,7 @@ def audit_text(text: str, output: OutputConfig) -> dict[str, Any]:
     paragraphs = [part for part in re.split(r"\n{2,}", text.strip()) if part.strip()]
     label_re = re.compile(output.label_regex, re.S)
     speaker_counts: Counter[str] = Counter()
-    normalized_texts: list[str] = []
+    normalized_chunks: list[tuple[str, str]] = []
 
     if "\n\n\n" in text:
         errors.append(
@@ -45,13 +45,13 @@ def audit_text(text: str, output: OutputConfig) -> dict[str, Any]:
                     "message": paragraph[:160],
                 }
             )
-            normalized_texts.append(normalize(paragraph))
+            normalized_chunks.append(("", normalize(paragraph)))
             continue
         groups = match.groupdict()
         speaker = groups.get("speaker", "").strip()
         body = groups.get("text", "").strip()
         speaker_counts[speaker] += 1
-        normalized_texts.append(normalize(body))
+        normalized_chunks.append((speaker, normalize(body)))
         if output.allowed_speakers and speaker not in output.allowed_speakers:
             errors.append(
                 {
@@ -69,8 +69,9 @@ def audit_text(text: str, output: OutputConfig) -> dict[str, Any]:
                 }
             )
 
-    for index in range(1, len(normalized_texts)):
-        if normalized_texts[index] and normalized_texts[index] == normalized_texts[index - 1]:
+    for index in range(1, len(normalized_chunks)):
+        speaker, body = normalized_chunks[index]
+        if body and (speaker, body) == normalized_chunks[index - 1]:
             errors.append(
                 {
                     "code": "adjacent_duplicate",

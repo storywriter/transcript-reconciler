@@ -50,6 +50,14 @@
   ],
   "overrides": [
     {
+      "segment": 10,
+      "text": "文脈と複数ソースから確認した本文です。"
+    },
+    {
+      "segment": 11,
+      "speaker": "ユーザー"
+    },
+    {
       "segment": 12,
       "chunks": [
         {"speaker": "モデレーター", "text": "質問の本文です。"},

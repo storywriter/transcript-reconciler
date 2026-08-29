@@ -148,6 +148,14 @@ def reconcile(
     if any(segment.start is None for segment in boundary):
         raise ConfigError("Every boundary segment needs a timestamp")
 
+    skeleton_indexes = {segment.index for segment in skeleton}
+    missing_override_segments = sorted(set(config.overrides) - skeleton_indexes)
+    if missing_override_segments:
+        raise ConfigError(
+            "Overrides reference missing skeleton segments: "
+            + ", ".join(map(str, missing_override_segments))
+        )
+
     boundary_end = max(
         (segment.end if segment.end is not None else segment.start or 0.0)
         for segment in boundary
@@ -156,6 +164,8 @@ def reconcile(
     reviews: list[dict[str, Any]] = []
     unresolved_candidates = 0
     overridden_segments = 0
+    boundary_overridden_segments = 0
+    override_kinds: Counter[str] = Counter()
 
     for position, row in enumerate(skeleton):
         assert row.start is not None
@@ -213,8 +223,19 @@ def reconcile(
 
         override = config.overrides.get(row.index)
         if override is not None:
-            raw_chunks = override
             overridden_segments += 1
+            override_kinds[override.kind] += 1
+            if override.resolves_boundary:
+                boundary_overridden_segments += 1
+            if override.chunks is not None:
+                raw_chunks = override.chunks
+            else:
+                raw_chunks = (
+                    (
+                        override.speaker if override.speaker is not None else inferred,
+                        override.text if override.text is not None else row.text,
+                    ),
+                )
         else:
             raw_chunks = ((inferred, row.text),)
         suggested: list[dict[str, str]] = []
@@ -248,11 +269,11 @@ def reconcile(
         }
         needs_review = (
             any(flag in review_trigger_flags for flag in flags)
-            and override is None
+            and not (override is not None and override.resolves_boundary)
         )
         if needs_review:
             unresolved_candidates += 1
-        if override is not None:
+        if override is not None and override.resolves_boundary:
             confidence = "manual"
         elif needs_review:
             confidence = "low"
@@ -283,6 +304,10 @@ def reconcile(
                 "flags": flags,
                 "confidence": confidence,
                 "override_applied": override is not None,
+                "override_kind": override.kind if override is not None else None,
+                "boundary_override_applied": (
+                    override is not None and override.resolves_boundary
+                ),
                 "needs_review": needs_review,
             }
         )
@@ -295,6 +320,8 @@ def reconcile(
         "output_chunks": len(chunks),
         "unresolved_candidates": unresolved_candidates,
         "overridden_segments": overridden_segments,
+        "boundary_overridden_segments": boundary_overridden_segments,
+        "override_kinds": dict(override_kinds),
         "source_counts": {source_id: len(items) for source_id, items in sources.items()},
     }
     return ReconcileResult(tuple(chunks), tuple(reviews), summary)

@@ -53,6 +53,27 @@ class OutputConfig:
 
 
 @dataclass(frozen=True)
+class SegmentOverride:
+    speaker: str | None = None
+    text: str | None = None
+    chunks: tuple[tuple[str, str], ...] | None = None
+
+    @property
+    def kind(self) -> str:
+        if self.chunks is not None:
+            return "chunks" if self.chunks else "suppress"
+        if self.speaker is not None and self.text is not None:
+            return "speaker_text"
+        if self.speaker is not None:
+            return "speaker"
+        return "text"
+
+    @property
+    def resolves_boundary(self) -> bool:
+        return self.speaker is not None or self.chunks is not None
+
+
+@dataclass(frozen=True)
 class SessionConfig:
     path: Path
     sources: tuple[SourceConfig, ...]
@@ -61,7 +82,7 @@ class SessionConfig:
     fallback: FallbackConfig
     output: OutputConfig
     replacements: tuple[tuple[str, str], ...]
-    overrides: dict[int, tuple[tuple[str, str], ...]]
+    overrides: dict[int, SegmentOverride]
 
     def source(self, source_id: str) -> SourceConfig:
         for source in self.sources:
@@ -229,7 +250,7 @@ def load_config(path: str | Path) -> SessionConfig:
     overrides_raw = data.get("overrides", [])
     if not isinstance(overrides_raw, list):
         raise ConfigError("overrides must be an array")
-    overrides: dict[int, tuple[tuple[str, str], ...]] = {}
+    overrides: dict[int, SegmentOverride] = {}
     for index, item in enumerate(overrides_raw):
         override = _require_object(item, f"overrides[{index}]")
         segment = int(override.get("segment", -1))
@@ -237,22 +258,44 @@ def load_config(path: str | Path) -> SessionConfig:
             raise ConfigError(
                 f"overrides[{index}].segment must be unique and non-negative"
             )
-        chunks_raw = override.get("chunks", [])
-        if not isinstance(chunks_raw, list):
-            raise ConfigError(f"overrides[{index}].chunks must be an array")
-        chunks: list[tuple[str, str]] = []
-        for chunk_index, chunk_item in enumerate(chunks_raw):
-            chunk = _require_object(
-                chunk_item, f"overrides[{index}].chunks[{chunk_index}]"
+        has_chunks = "chunks" in override
+        has_speaker = "speaker" in override
+        has_text = "text" in override
+        if has_chunks and (has_speaker or has_text):
+            raise ConfigError(
+                f"overrides[{index}] cannot combine chunks with speaker or text"
             )
-            speaker = str(chunk.get("speaker", "")).strip()
-            text = str(chunk.get("text", "")).strip()
-            if not speaker or not text:
-                raise ConfigError(
-                    f"overrides[{index}].chunks[{chunk_index}] needs speaker and text"
+        if not any((has_chunks, has_speaker, has_text)):
+            raise ConfigError(
+                f"overrides[{index}] needs chunks, speaker, or text"
+            )
+
+        if has_chunks:
+            chunks_raw = override["chunks"]
+            if not isinstance(chunks_raw, list):
+                raise ConfigError(f"overrides[{index}].chunks must be an array")
+            chunks: list[tuple[str, str]] = []
+            for chunk_index, chunk_item in enumerate(chunks_raw):
+                chunk = _require_object(
+                    chunk_item, f"overrides[{index}].chunks[{chunk_index}]"
                 )
-            chunks.append((speaker, text))
-        overrides[segment] = tuple(chunks)
+                speaker = str(chunk.get("speaker", "")).strip()
+                text = str(chunk.get("text", "")).strip()
+                if not speaker or not text:
+                    raise ConfigError(
+                        f"overrides[{index}].chunks[{chunk_index}] needs speaker and text"
+                    )
+                chunks.append((speaker, text))
+            overrides[segment] = SegmentOverride(chunks=tuple(chunks))
+            continue
+
+        speaker = str(override.get("speaker", "")).strip() if has_speaker else None
+        text = str(override.get("text", "")).strip() if has_text else None
+        if has_speaker and not speaker:
+            raise ConfigError(f"overrides[{index}].speaker must be non-empty")
+        if has_text and not text:
+            raise ConfigError(f"overrides[{index}].text must be non-empty")
+        overrides[segment] = SegmentOverride(speaker=speaker, text=text)
 
     speaker_map_raw = _require_object(data.get("speaker_map", {}), "speaker_map")
     speaker_map = {str(key): str(value) for key, value in speaker_map_raw.items()}
@@ -261,6 +304,11 @@ def load_config(path: str | Path) -> SessionConfig:
         fallback.false_speaker,
         fallback.default_speaker,
     }
+    for override in overrides.values():
+        if override.speaker:
+            configured_speakers.add(override.speaker)
+        if override.chunks is not None:
+            configured_speakers.update(speaker for speaker, _ in override.chunks)
     configured_speakers.discard("")
     if output.allowed_speakers and not configured_speakers.issubset(
         set(output.allowed_speakers)

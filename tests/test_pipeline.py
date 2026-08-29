@@ -5,7 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from transcript_reconciler.audit import audit_text
-from transcript_reconciler.config import load_config
+from transcript_reconciler.config import ConfigError, SegmentOverride, load_config
 from transcript_reconciler.parsers import parse_all_sources
 from transcript_reconciler.pipeline import reconcile
 from transcript_reconciler.rendering import render_markdown
@@ -40,6 +40,46 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("multiple_boundary_speakers", middle["flags"])
         self.assertFalse(middle["needs_review"])
         self.assertIn("notes", result.reviews[1]["additional_evidence"])
+
+    def test_text_only_override_does_not_resolve_speaker_review(self) -> None:
+        config = replace(
+            self.config,
+            overrides={0: SegmentOverride(text="本文だけを修正しました。")},
+        )
+        result = reconcile(config, self.sources)
+
+        first = result.reviews[0]
+        self.assertTrue(first["needs_review"])
+        self.assertEqual(first["override_kind"], "text")
+        self.assertTrue(first["override_applied"])
+        self.assertFalse(first["boundary_override_applied"])
+        self.assertEqual(result.chunks[0].text, "本文だけを修正しました。")
+        self.assertEqual(result.summary["unresolved_candidates"], 2)
+        self.assertEqual(result.summary["boundary_overridden_segments"], 0)
+
+    def test_speaker_only_override_preserves_skeleton_text(self) -> None:
+        config = replace(
+            self.config,
+            overrides={1: SegmentOverride(speaker="ユーザー")},
+        )
+        result = reconcile(config, self.sources)
+
+        middle = result.reviews[1]
+        self.assertFalse(middle["needs_review"])
+        self.assertEqual(middle["confidence"], "manual")
+        self.assertEqual(middle["override_kind"], "speaker")
+        self.assertEqual(result.chunks[1].speaker, "ユーザー")
+        self.assertEqual(result.chunks[1].text, self.sources["readable"][1].text)
+
+    def test_missing_override_segment_is_rejected(self) -> None:
+        config = replace(
+            self.config,
+            overrides={999: SegmentOverride(text="存在しない行です。")},
+        )
+        with self.assertRaisesRegex(
+            ConfigError, "Overrides reference missing skeleton segments: 999"
+        ):
+            reconcile(config, self.sources)
 
 
 if __name__ == "__main__":

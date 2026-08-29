@@ -41,7 +41,30 @@ Each object has `from` and `to`. Replacements are literal and global. Use them o
 
 ## `overrides`
 
-Each override identifies a zero-based skeleton `segment` and provides ordered `chunks`, each with `speaker` and `text`. Empty chunk arrays intentionally suppress a source segment. Indexes avoid collisions caused by repeated displayed timestamps.
+Each override identifies a zero-based skeleton `segment`. Use the narrowest form that records the decision actually made:
+
+- `text`: Correct only the wording and keep speaker inference active. A text-only override does not resolve a speaker-boundary review candidate.
+- `speaker`: Fix only the speaker and keep the skeleton text.
+- `speaker` plus `text`: Fix both fields while keeping the segment as one chunk.
+- `chunks`: Replace the segment with ordered chunks, each containing `speaker` and `text`. An empty array intentionally suppresses the source segment.
+
+Do not combine `chunks` with scalar `speaker` or `text`. Speaker and chunk overrides count as explicit boundary decisions; text-only overrides do not. The reconciler rejects override indexes that do not exist in the parsed skeleton instead of silently ignoring them. Indexes avoid collisions caused by repeated displayed timestamps, but the private session configuration must stay with the exact source files it was reviewed against.
+
+```json
+{
+  "overrides": [
+    {"segment": 10, "text": "Corrected wording."},
+    {"segment": 11, "speaker": "Interviewee"},
+    {
+      "segment": 12,
+      "chunks": [
+        {"speaker": "Moderator", "text": "Question."},
+        {"speaker": "Interviewee", "text": "Answer."}
+      ]
+    }
+  ]
+}
+```
 
 ## `output`
 
