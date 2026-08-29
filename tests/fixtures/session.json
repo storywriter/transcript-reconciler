@@ -1,0 +1,73 @@
+{
+  "sources": [
+    {
+      "id": "readable",
+      "path": "skeleton.csv",
+      "format": "csv",
+      "roles": ["chunk", "text"],
+      "columns": {
+        "display_time": "display_time",
+        "start": "start",
+        "speaker": "speaker",
+        "text": "text",
+        "interviewee": "interviewee"
+      }
+    },
+    {
+      "id": "diarization",
+      "path": "speakers.vtt",
+      "format": "vtt",
+      "roles": ["speaker", "timing"]
+    },
+    {
+      "id": "notes",
+      "path": "notes.md",
+      "format": "md",
+      "roles": ["text"]
+    }
+  ],
+  "alignment": {
+    "skeleton_source": "readable",
+    "boundary_source": "diarization",
+    "min_anchor_chars": 4,
+    "meaningful_speaker_score": 30,
+    "low_margin_score": 15,
+    "evidence_max_matches": 2
+  },
+  "speaker_map": {
+    "Moderator Raw": "山本",
+    "User Raw": "ユーザー"
+  },
+  "fallback": {
+    "metadata_field": "interviewee",
+    "true_values": ["TRUE"],
+    "true_speaker": "ユーザー",
+    "false_speaker": "山本",
+    "default_speaker": "山本"
+  },
+  "replacements": [],
+  "overrides": [
+    {
+      "segment": 0,
+      "chunks": [
+        {"speaker": "山本", "text": "本日はありがとうございます。"},
+        {"speaker": "ユーザー", "text": "はい、よろしくお願いします。"}
+      ]
+    },
+    {
+      "segment": 2,
+      "chunks": [
+        {"speaker": "ユーザー", "text": "改善点は検索です。"},
+        {"speaker": "山本", "text": "なるほど。"}
+      ]
+    }
+  ],
+  "output": {
+    "allowed_speakers": ["山本", "ユーザー"],
+    "label_template": "**{speaker}:** {text}",
+    "label_regex": "^\\*\\*(?P<speaker>.+?):\\*\\*\\s+(?P<text>.+)$",
+    "prohibit_headings": true,
+    "forbidden_patterns": ["SPEAKER_[0-9]+", "\\b(?:TRUE|FALSE)\\b"],
+    "quote_pairs": [["「", "」"], ["『", "』"]]
+  }
+}

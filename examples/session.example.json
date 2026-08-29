@@ -1,0 +1,70 @@
+{
+  "sources": [
+    {
+      "id": "readable",
+      "path": "./readable.csv",
+      "format": "csv",
+      "roles": ["chunk", "text"],
+      "columns": {
+        "display_time": "発話時刻",
+        "start": "発話時刻(秒)",
+        "speaker": "話者名",
+        "text": "書き起こし",
+        "interviewee": "インタビュイー？"
+      }
+    },
+    {
+      "id": "diarization",
+      "path": "./speaker-accurate.vtt",
+      "format": "vtt",
+      "roles": ["speaker", "timing"]
+    },
+    {
+      "id": "context",
+      "path": "./context-accurate.md",
+      "format": "md",
+      "roles": ["text"]
+    }
+  ],
+  "alignment": {
+    "skeleton_source": "readable",
+    "boundary_source": "diarization",
+    "min_anchor_chars": 4,
+    "meaningful_speaker_score": 30,
+    "low_margin_score": 15,
+    "evidence_max_matches": 3
+  },
+  "speaker_map": {
+    "Raw Moderator": "モデレーター",
+    "Raw Interviewee": "ユーザー"
+  },
+  "fallback": {
+    "metadata_field": "interviewee",
+    "true_values": ["TRUE"],
+    "true_speaker": "ユーザー",
+    "false_speaker": "モデレーター",
+    "default_speaker": "モデレーター"
+  },
+  "replacements": [
+    {"from": "誤認識された固有語", "to": "確認済みの固有語"}
+  ],
+  "overrides": [
+    {
+      "segment": 12,
+      "chunks": [
+        {"speaker": "モデレーター", "text": "質問の本文です。"},
+        {"speaker": "ユーザー", "text": "回答の本文です。"}
+      ]
+    }
+  ],
+  "output": {
+    "path": "./out/draft.md",
+    "review_path": "./out/review.jsonl",
+    "allowed_speakers": ["モデレーター", "ユーザー"],
+    "label_template": "**{speaker}:** {text}",
+    "label_regex": "^\\*\\*(?P<speaker>.+?):\\*\\*\\s+(?P<text>.+)$",
+    "prohibit_headings": true,
+    "forbidden_patterns": ["SPEAKER_[0-9]+", "\\b(?:TRUE|FALSE)\\b"],
+    "quote_pairs": [["「", "」"], ["『", "』"]]
+  }
+}

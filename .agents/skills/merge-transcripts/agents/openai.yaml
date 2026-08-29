@@ -1,0 +1,6 @@
+interface:
+  display_name: "Merge Transcripts"
+  short_description: "Reconcile multiple transcripts into one reviewed record"
+  default_prompt: "Use $merge-transcripts to reconcile these transcript files with accurate speaker boundaries."
+policy:
+  allow_implicit_invocation: true

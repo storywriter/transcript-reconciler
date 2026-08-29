@@ -1,0 +1,4 @@
+display_time,start,speaker,text,interviewee
+00:00:01,1.0,SPEAKER_00,本日はありがとうございます。はい、よろしくお願いします。,FALSE
+00:00:05,5.0,SPEAKER_01,サービスの操作は分かりやすいです。,TRUE
+00:00:10,10.0,SPEAKER_01,改善点は検索です。なるほど。,TRUE

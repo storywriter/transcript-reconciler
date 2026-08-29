@@ -1,0 +1,46 @@
+from __future__ import annotations
+
+import unittest
+from dataclasses import replace
+from pathlib import Path
+
+from transcript_reconciler.audit import audit_text
+from transcript_reconciler.config import load_config
+from transcript_reconciler.parsers import parse_all_sources
+from transcript_reconciler.pipeline import reconcile
+from transcript_reconciler.rendering import render_markdown
+
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+class PipelineTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.config = load_config(FIXTURES / "session.json")
+        self.sources = parse_all_sources(self.config)
+
+    def test_overrides_produce_expected_transcript(self) -> None:
+        result = reconcile(self.config, self.sources)
+        rendered = render_markdown(result.chunks, self.config.output)
+        expected = (FIXTURES / "expected.md").read_text(encoding="utf-8")
+        self.assertEqual(rendered, expected)
+        self.assertEqual(result.summary["unresolved_candidates"], 0)
+        self.assertEqual(result.summary["overridden_segments"], 2)
+        self.assertTrue(audit_text(rendered, self.config.output)["ok"])
+
+    def test_mixed_rows_are_candidates_without_overrides(self) -> None:
+        config = replace(self.config, overrides={})
+        result = reconcile(config, self.sources)
+        candidates = [review for review in result.reviews if review["needs_review"]]
+        self.assertEqual({review["segment"] for review in candidates}, {0, 2})
+        self.assertTrue(
+            all("multiple_boundary_speakers" in review["flags"] for review in candidates)
+        )
+        middle = result.reviews[1]
+        self.assertIn("multiple_boundary_speakers", middle["flags"])
+        self.assertFalse(middle["needs_review"])
+        self.assertIn("notes", result.reviews[1]["additional_evidence"])
+
+
+if __name__ == "__main__":
+    unittest.main()
