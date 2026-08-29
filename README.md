@@ -4,6 +4,23 @@
 
 CSVなどの読みやすいチャンクを骨格にし、VTT/SRTの細粒度な時刻・話者情報を重ねます。自動判定が危険な複数話者区間、短い相づち、根拠不足、話者不一致はJSONLのレビュー候補として残し、会議別の明示的なオーバーライドで確定します。
 
+## ツールの意図
+
+このツールは、AIによる発話分析ツール「toitta」と他のAI書き起こしツールを併用し、複数の発話録を突き合わせることで、話者分離精度と書き起こし精度を高めた発話録を生成します。
+そうして生成した精度の高い発話録を、再び「toitta」に投入することで、精度の高い切片を生成することができます。
+
+## 添付するファイル
+
+添付するファイルは、それぞれ以下のツールからダウンロードしてください。
+
+### CSV
+
+- AIによる発話分析ツール「toitta」に動画をいったんアップロードし、「書き起こし」だけをダウンロードしてください。
+
+### VTT、SRT、Markdown、TXT
+
+- Zoom、Microsoft Teams、Google Meetなどのツールで書き起こした発話録をダウンロードしてください。
+
 ## できること
 
 - CSV、VTT、SRT、Markdown、TXTを共通セグメントへ変換
@@ -40,6 +57,7 @@ Python 3.10以上だけで動作し、実行時依存はありません。
 
 設定の雛形は [`examples/session.example.json`](examples/session.example.json) にあります。実務手順と設定項目は以下を参照してください。
 
+- [Codexへの依頼プロンプト雛形](examples/prompt-template.md)
 - [統合作業手順](.agents/skills/merge-transcripts/references/workflow.md)
 - [レビュー・完了チェックリスト](.agents/skills/merge-transcripts/references/review-checklist.md)
 - [設定リファレンス](.agents/skills/merge-transcripts/references/configuration.md)
